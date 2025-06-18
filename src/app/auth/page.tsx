@@ -5,12 +5,20 @@ import React, { useState, useEffect } from "react";
 import AuthForm from "@/components/AuthForm";
 import { auth } from "@/firebase/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation"; // Import useSearchParams
 
 export default function AuthPage() {
-  const [isLoginMode, setIsLoginMode] = useState(true);
+  // REMOVE THIS LINE: This state is preventing the URL param from taking effect.
+  // const [isLoginMode, setIsLoginMode] = useState(true);
+
   const [isLoadingAuth, setIsLoadingAuth] = useState(true); // To prevent flickering
   const router = useRouter();
+  const searchParams = useSearchParams(); // Get access to URL search parameters
+
+  // Calculate isLogin from the URL query parameter
+  // If 'isLogin' param is 'false', it means we want signup mode.
+  // Otherwise (if 'true', or not present), it means login mode.
+  const isLoginFromUrl = searchParams.get("isLogin") !== "false"; // This line is the fix!
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -24,7 +32,7 @@ export default function AuthPage() {
 
     // Clean up the subscription when the component unmounts
     return () => unsubscribe();
-  }, [router]); // Depend on router to ensure effect reruns if router changes
+  }, [router]);
 
   if (isLoadingAuth) {
     // Show a loading state while checking authentication
@@ -36,26 +44,7 @@ export default function AuthPage() {
   }
 
   return (
-    <div style={{ textAlign: "center", padding: "20px" }}>
-      <h1 style={{ color: "#222" }}>Welcome to LittleBooker!</h1>
-      <button
-        onClick={() => setIsLoginMode(!isLoginMode)}
-        style={{
-          padding: "10px 20px",
-          margin: "30px 0 20px",
-          backgroundColor: "#f8f9fa",
-          border: "1px solid #ced4da",
-          borderRadius: "5px",
-          cursor: "pointer",
-          fontSize: "16px",
-          color: "#495057",
-          transition: "background-color 0.3s ease, border-color 0.3s ease",
-        }}
-      >
-        Switch to {isLoginMode ? "Sign Up" : "Login"}
-      </button>
-
-      <AuthForm isLogin={isLoginMode} />
-    </div>
+    // Pass the isLoginFromUrl to AuthForm
+    <AuthForm isLogin={isLoginFromUrl} />
   );
 }
